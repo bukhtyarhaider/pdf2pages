@@ -39,3 +39,20 @@ venv.bak/
 # PDF and image output
 input/
 output/
+uploads/
+outputs/
+
+# Flask/website specific
+instance/
+.webassets-cache
+*.db
+*.sqlite3
+*.log
+
+# Poppler/OS-specific
+poppler-*/
+poppler_bin/
+poppler/
+
+# VSCode
+.vscode/
