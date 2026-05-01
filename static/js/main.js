@@ -18,11 +18,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkboxes = document.querySelectorAll('.selection-checkbox');
     const selectedCount = document.getElementById('selected-count');
 
+    // Home Page Elements
+    const openArchiveBtn = document.getElementById('open-archive');
+    const closeArchiveBtn = document.getElementById('close-archive');
+    const archiveModal = document.getElementById('archive-modal');
+    const archiveSearch = document.getElementById('archive-search');
+    const archiveItems = document.querySelectorAll('.archive-item');
+
     // Lightbox Elements
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
     const closeLightbox = document.getElementById('close-lightbox');
     const previewTriggers = document.querySelectorAll('.preview-trigger');
+    const searchInput = document.getElementById('search-input');
+    const galleryItems = document.querySelectorAll('.gallery-item');
+    const shareButtons = document.querySelectorAll('.share-page');
 
     // Selection Logic
     const updateCount = () => {
@@ -49,6 +59,46 @@ document.addEventListener('DOMContentLoaded', () => {
         deselectAllBtn.addEventListener('click', () => {
             checkboxes.forEach(cb => cb.checked = false);
             updateCount();
+        });
+    }
+
+    // Archive Modal Logic
+    if (openArchiveBtn) {
+        openArchiveBtn.addEventListener('click', () => {
+            archiveModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            if (archiveSearch) archiveSearch.focus();
+        });
+    }
+
+    if (closeArchiveBtn) {
+        closeArchiveBtn.addEventListener('click', () => {
+            archiveModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+    }
+
+    if (archiveModal) {
+        archiveModal.addEventListener('click', (e) => {
+            if (e.target === archiveModal) {
+                archiveModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
+
+    // Archive Search Logic
+    if (archiveSearch) {
+        archiveSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            archiveItems.forEach(item => {
+                const name = item.dataset.name;
+                if (name.includes(query)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
         });
     }
 
@@ -86,6 +136,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeLightboxFn();
+        });
+    }
+
+    // Search Logic
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            galleryItems.forEach(item => {
+                const label = item.querySelector('.page-label').textContent.toLowerCase();
+                if (label.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // Share Logic
+    if (shareButtons.length > 0) {
+        shareButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const url = window.location.origin + btn.dataset.url;
+                navigator.clipboard.writeText(url).then(() => {
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                    }, 2000);
+                });
+            });
         });
     }
 
@@ -207,12 +289,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.dataTransfer.files.length) {
                 fileInput.files = e.dataTransfer.files;
                 updateFileLabel(e.dataTransfer.files[0].name);
+                if (submitBtn) submitBtn.disabled = false;
             }
         });
 
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length) {
                 updateFileLabel(fileInput.files[0].name);
+                if (submitBtn) submitBtn.disabled = false;
+            } else {
+                if (submitBtn) submitBtn.disabled = true;
             }
         });
 

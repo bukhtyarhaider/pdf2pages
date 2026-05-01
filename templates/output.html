@@ -1,144 +1,224 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gallery | Pdf2Pages</title>
-    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      @theme {
-        --color-accent: #3b82f6;
-        --font-sans: "Inter", sans-serif;
-      }
-      body {
-        font-family: var(--font-sans);
-        background-color: #000;
-        color: #fff;
-      }
-      .card-border {
-        border: 1px solid #262626;
-      }
-      .custom-checkbox {
-        width: 20px;
-        height: 20px;
-        border: 2px solid #3f3f46;
-        border-radius: 6px;
-        appearance: none;
-        cursor: pointer;
-        transition: all 0.2s;
-        background-color: rgba(0,0,0,0.5);
-        backdrop-filter: blur(4px);
-      }
-      .custom-checkbox:checked {
-        background-color: var(--color-accent);
-        border-color: var(--color-accent);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
-        background-size: 14px;
-        background-repeat: no-repeat;
-        background-position: center;
-      }
-      /* Modal / Lightbox Styles */
-      .lightbox-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.95);
-        display: none;
-        z-index: 100;
-        align-items: center;
-        justify-content: center;
-        padding: 40px;
-        backdrop-filter: blur(8px);
-      }
-      .lightbox-content {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-        border-radius: 8px;
-        box-shadow: 0 0 50px rgba(0,0,0,1);
-      }
-    </style>
-  </head>
-  <body class="antialiased pb-32" data-folder="{{ folder }}">
-    <!-- Lightbox Modal -->
-    <div id="lightbox" class="lightbox-overlay" role="dialog" aria-modal="true" aria-label="Image Preview">
-      <button id="close-lightbox" class="absolute top-6 right-6 p-3 rounded-full bg-neutral-800 text-white hover:bg-white hover:text-black transition-all z-10" aria-label="Close Preview">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-      <img id="lightbox-img" class="lightbox-content" src="" alt="Preview" />
-    </div>
 
-    <div class="max-w-7xl mx-auto px-6 py-12">
-      <!-- High Contrast Header -->
-      <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
-        <div>
-          <a href="/" class="text-xs font-bold text-neutral-500 hover:text-accent transition-colors flex items-center gap-2 mb-4 uppercase tracking-widest">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            Back to Dashboard
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gallery | Pdf2Pages</title>
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    rel="stylesheet" />
+  <style>
+    @theme {
+      --color-accent: #3b82f6;
+      --font-sans: "Inter", sans-serif;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: #000;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    .card-border {
+      border: 1px solid #1a1a1a;
+    }
+
+    .custom-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #262626;
+      border-radius: 6px;
+      appearance: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+
+    .custom-checkbox:checked {
+      background-color: var(--color-accent);
+      border-color: var(--color-accent);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+      background-size: 14px;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.98);
+      display: none;
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(20px);
+    }
+
+    .lightbox-content {
+      max-width: 100%;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 0 100px rgba(0, 0, 0, 1);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .animate-fade {
+      animation: fadeIn 0.4s ease-out forwards;
+      animation-delay: var(--delay, 0s);
+    }
+  </style>
+</head>
+
+<body class="antialiased pb-32" data-folder="{{ folder }}">
+  <!-- Lightbox Modal -->
+  <div id="lightbox" class="lightbox-overlay" role="dialog" aria-modal="true" aria-label="Image Preview">
+    <button id="close-lightbox"
+      class="absolute top-6 right-6 p-4 rounded-full bg-neutral-900 border border-neutral-800 text-white hover:bg-white hover:text-black transition-all z-10"
+      aria-label="Close Preview">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+    <img id="lightbox-img" class="lightbox-content" src="" alt="Preview" />
+  </div>
+
+  <div class="max-w-7xl mx-auto px-6 py-12">
+    <!-- Minimalist Dashboard Header -->
+    <header class="mb-12 space-y-8 animate-fade">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div class="flex items-center gap-6">
+          <a href="/"
+            class="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:border-neutral-700 transition-all group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="group-hover:-translate-x-1 transition-transform">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
           </a>
-          <h1 class="text-3xl font-black tracking-tight flex items-center gap-3">
-            {{ folder }} <span class="px-2 py-1 bg-neutral-900 rounded text-[10px] font-bold text-neutral-400 uppercase tracking-widest border border-neutral-800">Export</span>
-          </h1>
-        </div>
-        
-        <div class="flex gap-2">
-          <button id="select-all" class="text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl border border-neutral-800 hover:bg-neutral-900 transition-all">Select All</button>
-          <button id="deselect-all" class="text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl border border-neutral-800 hover:bg-neutral-900 transition-all">Clear</button>
-        </div>
-      </header>
-
-      <!-- Clean Gallery Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {% for image in images %}
-        <div class="group relative bg-[#0a0a0a] rounded-2xl border border-neutral-900 p-2 transition-all hover:border-accent/50 shadow-2xl">
-          <input type="checkbox" class="selection-checkbox custom-checkbox absolute top-4 left-4 z-20" aria-label="Select page {{ loop.index }}" />
-          
-          <div class="aspect-[3/4] rounded-xl overflow-hidden bg-neutral-900 cursor-zoom-in preview-trigger">
-            <img
-              src="{{ url_for('download_image', folder=folder, filename=image) }}"
-              alt="Page {{ loop.index }}"
-              data-filename="{{ image }}"
-              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
-            />
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="w-2 h-2 rounded-full bg-accent shadow-[0_0_5px_#3b82f6]"></span>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-600">Export Archive</p>
+            </div>
+            <h1 class="text-3xl font-black tracking-tighter">
+              {{ folder }}
+            </h1>
           </div>
-          
-          <div class="mt-4 px-2 pb-2 flex justify-between items-center">
-            <span class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Page {{ loop.index }}</span>
-            <a href="{{ url_for('download_image', folder=folder, filename=image) }}" download class="p-2 rounded-lg bg-neutral-800 text-neutral-400 hover:bg-accent hover:text-white transition-all">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+
+        <div class="flex items-center gap-3 w-full md:w-auto">
+          <div class="relative flex-1 md:w-64">
+            <input type="text" id="search-input" placeholder="Find page.. "
+              class="w-full bg-neutral-900/50 border border-neutral-800 rounded-xl px-10 py-3 text-xs font-bold text-white placeholder:text-neutral-700 focus:outline-none focus:border-accent/50 focus:bg-neutral-900 transition-all" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-700">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </div>
+          <button id="select-all"
+            class="px-5 py-3 rounded-xl border border-neutral-800 bg-neutral-900/30 text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all">All</button>
+          <button id="deselect-all"
+            class="px-5 py-3 rounded-xl border border-neutral-800 bg-neutral-900/30 text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all text-neutral-600">Clear</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Clean Gallery Grid -->
+    <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+      {% for image in images %}
+      <div class="gallery-item group relative bg-[#050505] rounded-2xl border border-neutral-900 p-2 transition-all hover:border-accent/30 hover:shadow-2xl animate-fade" style="--delay: {{ loop.index0 * 0.02 }}s">
+        <input type="checkbox" class="selection-checkbox custom-checkbox absolute top-4 left-4 z-20" aria-label="Select page {{ loop.index }}" />
+
+        <div class="aspect-[3/4] rounded-xl overflow-hidden bg-neutral-950 cursor-zoom-in preview-trigger relative">
+          <img src="{{ url_for('download_image', folder=folder, filename=image) }}" alt="Page {{ loop.index }}" data-filename="{{ image }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white scale-75 group-hover:scale-100 transition-transform">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              <line x1="11" y1="8" x2="11" y2="14" />
+              <line x1="8" y1="11" x2="14" y2="11" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="mt-4 px-2 pb-2 flex justify-between items-center">
+          <span class="text-[10px] font-black text-neutral-600 uppercase tracking-widest page-label">Page {{ loop.index }}</span>
+          <div class="flex items-center gap-1">
+            <button class="p-2 rounded-lg bg-neutral-900/50 text-neutral-600 hover:text-white transition-all share-page" data-url="{{ url_for('download_image', folder=folder, filename=image) }}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </button>
+            <a href="{{ url_for('download_image', folder=folder, filename=image) }}" download class="p-2 rounded-lg bg-neutral-900/50 text-neutral-600 hover:bg-accent hover:text-white transition-all">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
             </a>
           </div>
         </div>
-        {% endfor %}
       </div>
+      {% endfor %}
+    </div>
 
-      <!-- Action Bar -->
-      <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-        <div class="bg-white text-black px-8 py-4 rounded-2xl flex items-center gap-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <div class="flex items-center gap-3 pr-8 border-r border-neutral-200">
-            <span class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-black" id="selected-count">0</span>
-            <span class="text-[10px] font-black uppercase tracking-widest opacity-40">Selected</span>
-          </div>
-          
-          <div class="flex gap-2">
-            <button id="download-selected" class="text-xs font-black uppercase tracking-[0.2em] px-8 py-3 bg-accent text-white rounded-xl hover:scale-105 transition-all disabled:opacity-10 disabled:grayscale" disabled>
-              Download ZIP
-            </button>
-            
-            <button id="download-all" class="text-xs font-black uppercase tracking-[0.2em] px-8 py-3 bg-neutral-100 rounded-xl hover:bg-neutral-200 transition-all">
-              All Pages
-            </button>
-          </div>
+    <!-- Compact Action Bar -->
+    <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-6">
+      <div
+        class="bg-neutral-950 border border-neutral-800 text-white p-2 rounded-2xl flex items-center justify-between gap-2 shadow-[0_30px_60px_rgba(0,0,0,1)]">
+        <div class="flex items-center gap-3 px-4 py-2 bg-neutral-900 rounded-xl">
+          <span
+            class="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-black"
+            id="selected-count">0</span>
+          <span class="text-[9px] font-black uppercase tracking-widest text-neutral-500 hidden sm:inline">Active</span>
+        </div>
+
+        <div class="flex gap-2 flex-1">
+          <button id="download-selected"
+            class="flex-1 text-[10px] font-black uppercase tracking-[0.2em] py-3 bg-accent text-white rounded-xl hover:bg-blue-500 active:scale-95 transition-all disabled:opacity-20 shadow-lg shadow-accent/10"
+            disabled>
+            ZIP Export
+          </button>
+          <button id="download-all"
+            class="px-4 py-3 bg-neutral-900 rounded-xl hover:bg-neutral-800 transition-all text-neutral-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
+  </div>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  </body>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
 </html>
