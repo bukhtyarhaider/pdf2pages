@@ -1,8 +1,10 @@
 import os
 import time
-from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, Response, jsonify
 from werkzeug.utils import secure_filename
-from pdf2image import convert_from_path
+from pdf2image import convert_from_path, pdfinfo_from_path
+import threading
+import uuid
 
 UPLOAD_FOLDER = 'uploads'
 OUTPUT_FOLDER = 'outputs'
@@ -16,40 +18,61 @@ app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
+# Store progress: {job_id: {progress: 0, total: 0, status: 'starting', folder: ''}}
+jobs = {}
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def convert_pdf_to_images(pdf_path, output_dir):
-    os.makedirs(output_dir, exist_ok=True)
-    start_time = time.time()
-    images = convert_from_path(pdf_path)
-    for i, image in enumerate(images):
-        image_path = os.path.join(output_dir, f'page_{i+1}.png')
-        image.save(image_path, 'PNG')
-    elapsed = time.time() - start_time
-    return len(images), elapsed
+def convert_pdf_to_images_with_progress(pdf_path, output_dir, job_id):
+    try:
+        info = pdfinfo_from_path(pdf_path)
+        total_pages = info['Pages']
+        jobs[job_id]['total'] = total_pages
+        jobs[job_id]['status'] = 'converting'
+        
+        os.makedirs(output_dir, exist_ok=True)
+        start_time = time.time()
+        
+        for i in range(1, total_pages + 1):
+            image = convert_from_path(pdf_path, first_page=i, last_page=i)[0]
+            image_path = os.path.join(output_dir, f'page_{i}.png')
+            image.save(image_path, 'PNG')
+            jobs[job_id]['progress'] = i
+        
+        elapsed = time.time() - start_time
+        jobs[job_id]['status'] = 'completed'
+        jobs[job_id]['elapsed'] = elapsed
+    except Exception as e:
+        jobs[job_id]['status'] = 'failed'
+        jobs[job_id]['error'] = str(e)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         if 'pdf_file' not in request.files:
-            flash('No file part')
-            return redirect(request.url)
+            return jsonify({"error": "No file part"}), 400
         file = request.files['pdf_file']
         if file.filename == '':
-            flash('No selected file')
-            return redirect(request.url)
+            return jsonify({"error": "No selected file"}), 400
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(pdf_path)
-            output_dir = os.path.join(app.config['OUTPUT_FOLDER'], os.path.splitext(filename)[0])
-            num_pages, elapsed = convert_pdf_to_images(pdf_path, output_dir)
-            flash(f'Converted {num_pages} pages in {elapsed:.2f} seconds. Download images below.')
-            return redirect(url_for('output', folder=os.path.splitext(filename)[0]))
+            
+            folder = os.path.splitext(filename)[0]
+            output_dir = os.path.join(app.config['OUTPUT_FOLDER'], folder)
+            
+            job_id = str(uuid.uuid4())
+            jobs[job_id] = {'progress': 0, 'total': 0, 'status': 'starting', 'folder': folder}
+            
+            # Start conversion in background
+            thread = threading.Thread(target=convert_pdf_to_images_with_progress, args=(pdf_path, output_dir, job_id))
+            thread.start()
+            
+            return jsonify({"job_id": job_id})
         else:
-            flash('Invalid file type. Please upload a PDF.')
-            return redirect(request.url)
+            return jsonify({"error": "Invalid file type"}), 400
     
     # List previous conversions
     conversions = []
@@ -60,6 +83,23 @@ def index():
                              reverse=True)
     
     return render_template('index.html', conversions=conversions)
+
+@app.route('/progress/<job_id>')
+def progress(job_id):
+    def generate():
+        while True:
+            job = jobs.get(job_id)
+            if not job:
+                break
+            
+            data = f"data: {{\"progress\": {job['progress']}, \"total\": {job['total']}, \"status\": \"{job['status']}\", \"folder\": \"{job['folder']}\"}}\n\n"
+            yield data
+            
+            if job['status'] in ['completed', 'failed']:
+                break
+            time.sleep(0.5)
+    
+    return Response(generate(), mimetype='text/event-stream')
 
 @app.route('/output/<folder>')
 def output(folder):

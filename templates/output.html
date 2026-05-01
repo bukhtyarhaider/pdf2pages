@@ -3,89 +3,115 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PDF to Images - Conversion Result</title>
+    <title>Gallery | Pdf2Pages</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
       rel="stylesheet"
     />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
+    <style>
+      @theme {
+        --color-accent: #3b82f6;
+        --font-sans: "Inter", sans-serif;
+      }
+      body {
+        font-family: var(--font-sans);
+        background-color: #000;
+        color: #fff;
+      }
+      .card-border {
+        border: 1px solid #262626;
+      }
+      .custom-checkbox {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #3f3f46;
+        border-radius: 6px;
+        appearance: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        background-color: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px);
+      }
+      .custom-checkbox:checked {
+        background-color: var(--color-accent);
+        border-color: var(--color-accent);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+        background-size: 14px;
+        background-repeat: no-repeat;
+        background-position: center;
+      }
+    </style>
   </head>
-  <body data-folder="{{ folder }}">
-    <div class="container py-5 fade-in">
-      <div class="d-flex justify-content-between align-items-center mb-5">
+  <body class="antialiased pb-32" data-folder="{{ folder }}">
+    <div class="max-w-7xl mx-auto px-6 py-12">
+      <!-- High Contrast Header -->
+      <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
         <div>
-          <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700" class="mb-1">
-            Converted Images
-          </h2>
-          <p class="text-muted mb-0">PDF: {{ folder }}</p>
+          <a href="/" class="text-xs font-bold text-neutral-500 hover:text-accent transition-colors flex items-center gap-2 mb-4 uppercase tracking-widest">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Back to Dashboard
+          </a>
+          <h1 class="text-3xl font-black tracking-tight flex items-center gap-3">
+            {{ folder }} <span class="px-2 py-1 bg-neutral-900 rounded text-[10px] font-bold text-neutral-400 uppercase tracking-widest border border-neutral-800">Export</span>
+          </h1>
         </div>
-        <a href="/" class="btn-secondary-premium text-decoration-none">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          Convert Another
-        </a>
-      </div>
+        
+        <div class="flex gap-2">
+          <button id="select-all" class="text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl border border-neutral-800 hover:bg-neutral-900 transition-all">Select All</button>
+          <button id="deselect-all" class="text-xs font-bold uppercase tracking-widest px-6 py-3 rounded-xl border border-neutral-800 hover:bg-neutral-900 transition-all">Clear</button>
+        </div>
+      </header>
 
-      <div class="d-flex gap-2 mb-4">
-        <button id="select-all" class="btn btn-sm btn-outline-primary rounded-pill px-3">Select All</button>
-        <button id="deselect-all" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Deselect All</button>
-      </div>
-
-      <div class="image-grid">
+      <!-- Clean Gallery Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {% for image in images %}
-        <div class="image-card">
-          <input type="checkbox" class="selection-checkbox" />
-          <img
-            src="{{ url_for('download_image', folder=folder, filename=image) }}"
-            alt="Page {{ loop.index }}"
-            data-filename="{{ image }}"
-          />
-          <div class="card-overlay">
-            <a
-              href="{{ url_for('download_image', folder=folder, filename=image) }}"
-              class="btn-premium btn-sm"
-              download
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Download
+        <div class="group relative bg-[#0a0a0a] rounded-2xl border border-neutral-900 p-2 transition-all hover:border-accent/50 shadow-2xl">
+          <input type="checkbox" class="selection-checkbox custom-checkbox absolute top-4 left-4 z-20" aria-label="Select page {{ loop.index }}" />
+          
+          <div class="aspect-[3/4] rounded-xl overflow-hidden bg-neutral-900">
+            <img
+              src="{{ url_for('download_image', folder=folder, filename=image) }}"
+              alt="Page {{ loop.index }}"
+              data-filename="{{ image }}"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+          </div>
+          
+          <div class="mt-4 px-2 pb-2 flex justify-between items-center">
+            <span class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Page {{ loop.index }}</span>
+            <a href="{{ url_for('download_image', folder=folder, filename=image) }}" download class="p-2 rounded-lg bg-neutral-800 text-neutral-400 hover:bg-accent hover:text-white transition-all">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </a>
           </div>
         </div>
         {% endfor %}
       </div>
 
-      <!-- Actions Bar -->
-      <div class="actions-bar">
-        <div class="floating-actions">
-          <div class="d-flex align-items-center gap-2 me-3 pe-3 border-end">
-            <span class="badge-count" id="selected-count">0</span>
-            <span class="text-muted small fw-medium">selected</span>
+      <!-- Action Bar -->
+      <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+        <div class="bg-white text-black px-8 py-4 rounded-2xl flex items-center gap-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <div class="flex items-center gap-3 pr-8 border-r border-neutral-200">
+            <span class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-black" id="selected-count">0</span>
+            <span class="text-[10px] font-black uppercase tracking-widest opacity-40">Selected</span>
           </div>
           
-          <button id="download-selected" class="btn-premium py-2 px-4" disabled>
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download Selected (ZIP)
-          </button>
-          
-          <button id="download-all" class="btn-secondary-premium py-2 px-4 d-flex align-items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download All
-          </button>
+          <div class="flex gap-2">
+            <button id="download-selected" class="text-xs font-black uppercase tracking-[0.2em] px-8 py-3 bg-accent text-white rounded-xl hover:scale-105 transition-all disabled:opacity-10 disabled:grayscale" disabled>
+              Download ZIP
+            </button>
+            
+            <button id="download-all" class="text-xs font-black uppercase tracking-[0.2em] px-8 py-3 bg-neutral-100 rounded-xl hover:bg-neutral-200 transition-all">
+              All Pages
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- External Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

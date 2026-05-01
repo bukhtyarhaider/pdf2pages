@@ -1,4 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // UI Elements
+    const uploadForm = document.getElementById('upload-form');
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('pdf_file');
+    const submitBtn = document.getElementById('submit-btn');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    const pageCountText = document.getElementById('page-count');
+    const statusText = document.getElementById('status-text');
+
+    // Output Page Elements
     const selectAllBtn = document.getElementById('select-all');
     const deselectAllBtn = document.getElementById('deselect-all');
     const downloadSelectedBtn = document.getElementById('download-selected');
@@ -6,16 +18,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkboxes = document.querySelectorAll('.selection-checkbox');
     const selectedCount = document.getElementById('selected-count');
 
-    // Update selection count
+    // Selection Logic
     const updateCount = () => {
+        if (!selectedCount) return;
         const checked = document.querySelectorAll('.selection-checkbox:checked').length;
         selectedCount.textContent = checked;
-        downloadSelectedBtn.disabled = checked === 0;
+        if (downloadSelectedBtn) {
+            downloadSelectedBtn.disabled = checked === 0;
+        }
     };
 
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', updateCount);
-    });
+    if (checkboxes) {
+        checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
+    }
 
     if (selectAllBtn) {
         selectAllBtn.addEventListener('click', () => {
@@ -31,27 +46,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const createZipAndDownload = async (filenames, zipName) => {
+    // ZIP Logic (Server-side)
+    const createZipAndDownload = async (filenames, zipName, btn) => {
         const folder = document.body.dataset.folder;
-        
-        const btn = filenames.length === checkboxes.length ? downloadAllBtn : downloadSelectedBtn;
         const btnOriginalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        btn.innerHTML = '<span class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2"></span> Processing...';
         btn.disabled = true;
 
         try {
             const response = await fetch('/zip', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    folder: folder,
-                    filenames: filenames
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folder, filenames })
             });
 
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) throw new Error('Zip generation failed');
 
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
@@ -63,8 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (error) {
-            console.error('Error creating ZIP:', error);
-            alert('Failed to create ZIP. Please try again.');
+            console.error('Error:', error);
+            alert('Failed to generate ZIP. Please try again.');
         } finally {
             btn.innerHTML = btnOriginalText;
             btn.disabled = btn === downloadSelectedBtn && document.querySelectorAll('.selection-checkbox:checked').length === 0;
@@ -73,58 +82,109 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (downloadSelectedBtn) {
         downloadSelectedBtn.addEventListener('click', () => {
-            const selectedFilenames = Array.from(document.querySelectorAll('.selection-checkbox:checked'))
-                .map(cb => {
-                    const card = cb.closest('.image-card');
-                    return card.querySelector('img').dataset.filename;
-                });
-            
-            if (selectedFilenames.length > 0) {
-                createZipAndDownload(selectedFilenames, 'selected_images.zip');
-            }
+            const filenames = Array.from(document.querySelectorAll('.selection-checkbox:checked'))
+                .map(cb => cb.closest('.group').querySelector('img').dataset.filename);
+            createZipAndDownload(filenames, 'selected_pages.zip', downloadSelectedBtn);
         });
     }
 
     if (downloadAllBtn) {
         downloadAllBtn.addEventListener('click', () => {
-            const allFilenames = Array.from(document.querySelectorAll('.image-card img'))
+            const filenames = Array.from(document.querySelectorAll('img[data-filename]'))
                 .map(img => img.dataset.filename);
-            
-            createZipAndDownload(allFilenames, 'all_images.zip');
+            createZipAndDownload(filenames, 'all_pages.zip', downloadAllBtn);
         });
     }
 
-    // Drag and drop logic for index page
-    const uploadZone = document.getElementById('upload-zone');
-    const fileInput = document.getElementById('pdf_file');
+    // Upload & Realtime Progress
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(uploadForm);
 
-    if (uploadZone && fileInput) {
+            submitBtn.disabled = true;
+            uploadZone.classList.add('hidden');
+            progressContainer.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.job_id) {
+                    const eventSource = new EventSource(`/progress/${data.job_id}`);
+                    eventSource.onmessage = (event) => {
+                        const progressData = JSON.parse(event.data);
+                        const { progress, total, status, folder } = progressData;
+
+                        if (total > 0) {
+                            const percent = Math.round((progress / total) * 100);
+                            progressBar.style.width = `${percent}%`;
+                            progressPercent.textContent = `${percent}%`;
+                            pageCountText.textContent = `${progress} of ${total} pages`;
+                        }
+
+                        if (status === 'completed') {
+                            eventSource.close();
+                            statusText.textContent = 'Success!';
+                            setTimeout(() => {
+                                window.location.href = `/output/${folder}`;
+                            }, 1000);
+                        } else if (status === 'failed') {
+                            eventSource.close();
+                            alert('Conversion failed. Please try again.');
+                            location.reload();
+                        }
+                    };
+                } else {
+                    alert(data.error || 'Upload failed');
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Something went wrong. Please try again.');
+                location.reload();
+            }
+        });
+
+        // Drag and Drop
         uploadZone.addEventListener('click', () => fileInput.click());
-
         uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadZone.classList.add('dragover');
+            uploadZone.classList.add('border-accent/50', 'bg-accent/5');
         });
-
         uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('dragover');
+            uploadZone.classList.remove('border-accent/50', 'bg-accent/5');
         });
-
         uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadZone.classList.remove('dragover');
+            uploadZone.classList.remove('border-accent/50', 'bg-accent/5');
             if (e.dataTransfer.files.length) {
                 fileInput.files = e.dataTransfer.files;
-                // Optional: trigger form submit or show filename
-                const label = uploadZone.querySelector('p');
-                label.textContent = `Selected: ${e.dataTransfer.files[0].name}`;
+                updateFileLabel(e.dataTransfer.files[0].name);
             }
         });
 
         fileInput.addEventListener('change', () => {
             if (fileInput.files.length) {
-                const label = uploadZone.querySelector('p');
-                label.textContent = `Selected: ${fileInput.files[0].name}`;
+                updateFileLabel(fileInput.files[0].name);
+            }
+        });
+
+        const updateFileLabel = (name) => {
+            const primaryLabel = uploadZone.querySelector('p.text-white');
+            const secondaryLabel = uploadZone.querySelector('p.text-neutral-500');
+            if (primaryLabel) primaryLabel.textContent = name;
+            if (secondaryLabel) secondaryLabel.textContent = 'File selected';
+        };
+
+        // Keyboard accessibility
+        uploadZone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInput.click();
             }
         });
     }
