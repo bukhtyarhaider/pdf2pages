@@ -50,7 +50,16 @@ def index():
         else:
             flash('Invalid file type. Please upload a PDF.')
             return redirect(request.url)
-    return render_template('index.html')
+    
+    # List previous conversions
+    conversions = []
+    if os.path.exists(app.config['OUTPUT_FOLDER']):
+        conversions = sorted([d for d in os.listdir(app.config['OUTPUT_FOLDER']) 
+                             if os.path.isdir(os.path.join(app.config['OUTPUT_FOLDER'], d))],
+                             key=lambda x: os.path.getmtime(os.path.join(app.config['OUTPUT_FOLDER'], x)),
+                             reverse=True)
+    
+    return render_template('index.html', conversions=conversions)
 
 @app.route('/output/<folder>')
 def output(folder):
@@ -66,5 +75,40 @@ def download_image(folder, filename):
     output_dir = os.path.join(app.config['OUTPUT_FOLDER'], folder)
     return send_from_directory(output_dir, filename, as_attachment=True)
 
+import zipfile
+import io
+from flask import send_file
+
+@app.route('/zip', methods=['POST'])
+def zip_images():
+    data = request.json
+    folder = data.get('folder')
+    filenames = data.get('filenames')
+    
+    if not folder or not filenames:
+        return {"error": "Missing data"}, 400
+        
+    output_dir = os.path.join(app.config['OUTPUT_FOLDER'], folder)
+    
+    memory_file = io.BytesIO()
+    with zipfile.ZipFile(memory_file, 'w') as zf:
+        for filename in filenames:
+            file_path = os.path.join(output_dir, filename)
+            if os.path.exists(file_path):
+                zf.write(file_path, filename)
+    
+    memory_file.seek(0)
+    return send_file(
+        memory_file,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=f'{folder}.zip'
+    )
+
+@app.before_request
+def log_request_info():
+    app.logger.debug('Headers: %s', request.headers)
+    app.logger.debug('Body: %s', request.get_data())
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5001)
