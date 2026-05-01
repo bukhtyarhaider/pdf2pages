@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkboxes = document.querySelectorAll('.selection-checkbox');
     const selectedCount = document.getElementById('selected-count');
 
+    // Lightbox Elements
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const closeLightbox = document.getElementById('close-lightbox');
+    const previewTriggers = document.querySelectorAll('.preview-trigger');
+
     // Selection Logic
     const updateCount = () => {
         if (!selectedCount) return;
@@ -43,6 +49,43 @@ document.addEventListener('DOMContentLoaded', () => {
         deselectAllBtn.addEventListener('click', () => {
             checkboxes.forEach(cb => cb.checked = false);
             updateCount();
+        });
+    }
+
+    // Lightbox Logic
+    if (previewTriggers.length > 0) {
+        previewTriggers.forEach(trigger => {
+            trigger.addEventListener('click', (e) => {
+                // Don't trigger if clicking the checkbox
+                if (e.target.classList.contains('selection-checkbox')) return;
+                
+                const img = trigger.querySelector('img');
+                if (img) {
+                    lightboxImg.src = img.src;
+                    lightbox.style.display = 'flex';
+                    document.body.style.overflow = 'hidden'; // Prevent scroll
+                }
+            });
+        });
+
+        const closeLightboxFn = () => {
+            lightbox.style.display = 'none';
+            lightboxImg.src = '';
+            document.body.style.overflow = 'auto';
+        };
+
+        if (closeLightbox) {
+            closeLightbox.addEventListener('click', closeLightboxFn);
+        }
+
+        if (lightbox) {
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) closeLightboxFn();
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLightboxFn();
         });
     }
 

@@ -43,9 +43,36 @@
         background-repeat: no-repeat;
         background-position: center;
       }
+      /* Modal / Lightbox Styles */
+      .lightbox-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.95);
+        display: none;
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        backdrop-filter: blur(8px);
+      }
+      .lightbox-content {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 0 50px rgba(0,0,0,1);
+      }
     </style>
   </head>
   <body class="antialiased pb-32" data-folder="{{ folder }}">
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="lightbox-overlay" role="dialog" aria-modal="true" aria-label="Image Preview">
+      <button id="close-lightbox" class="absolute top-6 right-6 p-3 rounded-full bg-neutral-800 text-white hover:bg-white hover:text-black transition-all z-10" aria-label="Close Preview">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <img id="lightbox-img" class="lightbox-content" src="" alt="Preview" />
+    </div>
+
     <div class="max-w-7xl mx-auto px-6 py-12">
       <!-- High Contrast Header -->
       <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
@@ -71,7 +98,7 @@
         <div class="group relative bg-[#0a0a0a] rounded-2xl border border-neutral-900 p-2 transition-all hover:border-accent/50 shadow-2xl">
           <input type="checkbox" class="selection-checkbox custom-checkbox absolute top-4 left-4 z-20" aria-label="Select page {{ loop.index }}" />
           
-          <div class="aspect-[3/4] rounded-xl overflow-hidden bg-neutral-900">
+          <div class="aspect-[3/4] rounded-xl overflow-hidden bg-neutral-900 cursor-zoom-in preview-trigger">
             <img
               src="{{ url_for('download_image', folder=folder, filename=image) }}"
               alt="Page {{ loop.index }}"
